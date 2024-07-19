@@ -1,8 +1,18 @@
-import { contextBridge } from 'electron'
+import { contextBridge, ipcRenderer } from 'electron';
 import { electronAPI } from '@electron-toolkit/preload'
 
 // Custom APIs for renderer
-const api = {}
+const api = {
+  getPasswordStoreEntries: () => {
+    return ipcRenderer.invoke('get-password-store-entries')
+  },
+  getPasswordStoreEntry: async (entryPath) => {
+    return await ipcRenderer.invoke('getPasswordStoreEntry', entryPath);
+  },
+  savePasswordStoreEntry: async (entryPath, content) => {
+    return await ipcRenderer.invoke('savePasswordStoreEntry', entryPath, content);
+  }
+}
 
 // Use `contextBridge` APIs to expose Electron APIs to
 // renderer only if context isolation is enabled, otherwise
