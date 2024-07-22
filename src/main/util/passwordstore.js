@@ -3,11 +3,48 @@ const path = require('path');
 const { exec} = require('child_process');
 const shellEscape = require('shell-escape');
 
-const getPasswordStoreEntries = () => {
+const filterDirectoryStructure = (structure, query) => {
+  const lowerCaseQuery = query.toLowerCase();
+
+  return structure
+    .map(item => {
+      const lowerCasePath = item.path.toLowerCase();
+
+      if (lowerCasePath.includes(lowerCaseQuery)) {
+        // If the current item's path includes the query, include the item
+        return {
+          ...item,
+          // Recursively filter the children
+          children: filterDirectoryStructure(item.children, lowerCaseQuery)
+        };
+      } else {
+        // Recursively filter the children
+        const filteredChildren = filterDirectoryStructure(item.children, lowerCaseQuery);
+        if (filteredChildren.length > 0) {
+          // If any children match the query, include the item with the filtered children
+          return {
+            ...item,
+            children: filteredChildren
+          };
+        }
+      }
+      // Exclude the item if neither it nor its children match the query
+      return null;
+    })
+    .filter(item => item !== null); // Filter out null items and cast to DirectoryStructure
+};
+
+const getPasswordStoreEntries = (query) => {
   const dirPath = '/home/disablable/.password-store'; // Update this to the correct path
   const excludePatterns = [/^\./];
 
-  return readDirectoryStructure(dirPath, excludePatterns);
+  const directoryStructure = readDirectoryStructure(dirPath, excludePatterns);
+
+  if (!query) {
+    return directoryStructure;
+  }
+
+  return filterDirectoryStructure(directoryStructure, query);
 };
 
 const getPasswordStoreEntry = async (entryPath) => {

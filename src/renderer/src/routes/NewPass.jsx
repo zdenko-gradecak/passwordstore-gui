@@ -1,0 +1,148 @@
+import { Form, redirect, useLoaderData, useNavigate, useNavigation } from 'react-router-dom';
+import { FaSave, FaSpinner } from 'react-icons/fa';
+import { useEffect, useRef, useState } from 'react';
+
+export const loader = async () => {
+  const passwordEntries = await window.api.getPasswordStoreEntries();
+
+  return { passwordEntries };
+};
+
+export const action = async ({ request }) => {
+  const formData = await request.formData();
+  const updates = Object.fromEntries(formData);
+
+  await window.api.savePasswordStoreEntry(updates.path, updates.content);
+
+  return redirect(`/pass/${encodeURIComponent(updates.path)}`);
+};
+
+const NewPass = () => {
+  const navigation = useNavigation();
+  const navigate = useNavigate();
+  const pathInputRef = useRef(null);
+  const contentInputRef = useRef(null);
+  const { passwordEntries } = useLoaderData();
+  const [enteredPath, setEnteredPath] = useState('');
+  const [enteredContent, setEnteredContent] = useState('');
+  const [isExistingPath, setIsExistingPath] = useState(false);
+  const isSubmitting = navigation.state === 'submitting';
+
+  const findPasswordEntryByPath = (entries, path) => {
+    for (const entry of entries) {
+      if (entry.path === path) {
+        return entry;
+      }
+      if (entry.children) {
+        const found = findPasswordEntryByPath(entry.children, path);
+        if (found) {
+          return found;
+        }
+      }
+    }
+
+    return null;
+  };
+
+  const checkIfEntryExists = (enteredPath) => {
+    let isPasswordEntryFound = false;
+
+    if (enteredPath) {
+      isPasswordEntryFound = !!findPasswordEntryByPath(passwordEntries, enteredPath);
+    }
+
+    setIsExistingPath(isPasswordEntryFound);
+  };
+
+  const handleOnPathChange = (e) => {
+    const path = e.target.value;
+    setEnteredPath(path);
+    checkIfEntryExists(path);
+  };
+
+  const handleOnContentChange = (e) => {
+    const content = e.target.value;
+    setEnteredContent(content);
+  };
+
+  useEffect(() => {
+    setTimeout(() => {
+      if (pathInputRef.current) {
+        pathInputRef.current.focus();
+      }
+    }, 0);
+  }, []);
+
+  const isSaveDisabled = isExistingPath || enteredPath.trim() === '' || enteredContent.trim() === '';
+
+  return (
+    <div className="max-w-4xl mx-auto p-6">
+      <Form method="post">
+        <div className="flex justify-between items-center border-b border-gray-200 mb-4 pb-2">
+          <h3 className="text-xl font-medium text-gray-600 leading-none py-4">New password</h3>
+        </div>
+
+        <div className="mb-4">
+          <input
+            className={`border rounded-md w-full p-2 mb-4 focus:outline-none focus:ring-2 focus:border-transparent
+              ${isExistingPath
+                ? 'ring-2 ring-red-500'
+                : 'focus:ring-blue-500'}`}
+            placeholder="Save path e.g. John/private/amazon.com"
+            type="text"
+            name="path"
+            defaultValue=""
+            onChange={handleOnPathChange}
+            ref={pathInputRef}
+          />
+          {isExistingPath && (
+            <p className="text-red-500 text-sm">This entry already exists. Please choose a different path.</p>
+          )}
+        </div>
+
+        <div className="mb-4">
+          <textarea
+            className="border rounded-md w-full h-64 p-4 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="Encrypted content"
+            name="content"
+            defaultValue=""
+            onChange={handleOnContentChange}
+            ref={contentInputRef}
+            data-testid="password-content"
+          />
+          </div>
+
+          <div className="flex space-x-4 mt-4">
+            <button
+              className={`px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-opacity-50 flex items-center
+                ${isSaveDisabled
+                  ? 'bg-gray-400 cursor-not-allowed opacity-50'
+                  : 'bg-blue-500 hover:bg-blue-600 focus:ring-blue-500 text-white'}`}
+              type="submit"
+              disabled={isSaveDisabled}
+              data-testid="save-password-entry-button"
+            >
+              {isSubmitting
+                ? <FaSpinner className="text-white mr-2" />
+                : <FaSave className="text-white mr-2" />
+              }
+              <span>Save</span>
+            </button>
+
+            <button
+              className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50"
+              type="button"
+              onClick={() => {
+                navigate(-1);
+              }}
+              data-testid="cancel-password-entry-button"
+            >
+              Cancel
+            </button>
+          </div>
+      </Form>
+    </div>
+);
+};
+
+export default NewPass;

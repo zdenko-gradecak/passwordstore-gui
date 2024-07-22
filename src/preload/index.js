@@ -3,14 +3,14 @@ import { electronAPI } from '@electron-toolkit/preload'
 
 // Custom APIs for renderer
 const api = {
-  getPasswordStoreEntries: () => {
-    return ipcRenderer.invoke('get-password-store-entries')
+  getPasswordStoreEntries: (query) => {
+    return ipcRenderer.invoke('get-password-store-entries', query);
   },
   getPasswordStoreEntry: async (entryPath) => {
-    return await ipcRenderer.invoke('getPasswordStoreEntry', entryPath);
+    return await ipcRenderer.invoke('get-password-store-entry', entryPath);
   },
   savePasswordStoreEntry: async (entryPath, content) => {
-    return await ipcRenderer.invoke('savePasswordStoreEntry', entryPath, content);
+    return await ipcRenderer.invoke('save-password-store-entry', entryPath, content);
   }
 }
 
