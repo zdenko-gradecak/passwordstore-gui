@@ -43,6 +43,7 @@ const PasswordTree = ({ passwordStoreEntries, expandAllNodes }) => {
                   <NavLink
                     to={`pass/${encodeURIComponent(password.path)}${location.search}`}
                     className={({ isActive }) => `w-full block m-1 p-2 rounded-md text-left ${isActive ? 'bg-blue-500 text-white' : 'hover:bg-blue-200'}`}
+                    data-testid="password-list-item"
                   >
                     {password.name}
                   </NavLink>

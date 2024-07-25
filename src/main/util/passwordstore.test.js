@@ -171,7 +171,6 @@ describe('getPasswordStoreEntries', () => {
     });
 
     fs.readdirSync.mockImplementation((dirPath) => {
-      console.log('mockImplementation dir path:', dirPath);
       return mockStructure[dirPath] || [];
     });
 

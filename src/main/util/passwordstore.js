@@ -54,7 +54,6 @@ const getPasswordStoreEntry = async (entryPath) => {
   return new Promise((resolve, reject) => {
     exec(passCommand, (error, stdout, stderr) => {
       if (error) {
-        console.log(stderr);
         return reject(stderr);
       }
       resolve(stdout);

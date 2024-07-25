@@ -15,9 +15,7 @@ export const loader = async ({ request }) => {
 const Root = ({ params }) => {
   const navigation = useNavigation();
   const { passwordStoreEntries, q } = useLoaderData();
-
   const isLoading = navigation.state === 'loading';
-  console.log('params', params);
 
   return (
     <div className="flex h-screen">
