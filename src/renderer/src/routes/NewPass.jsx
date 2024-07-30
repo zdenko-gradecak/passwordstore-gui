@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Form, redirect, useLoaderData, useNavigate, useNavigation } from 'react-router-dom';
+import { Form, NavLink, redirect, useLoaderData, useNavigate, useNavigation } from 'react-router-dom';
 import { FaSave, FaSpinner } from 'react-icons/fa';
 import useAutocomplete from '../hooks/useAutocomplete';
 
@@ -177,16 +177,17 @@ const NewPass = () => {
             <span>Save</span>
           </button>
 
-          <button
+          <NavLink
+            to="/"
             className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50"
             type="button"
             onClick={() => {
-              navigate(-1);
+              return redirect('/');
             }}
             data-testid="cancel-password-entry-button"
           >
             Cancel
-          </button>
+          </NavLink>
         </div>
       </Form>
     </div>
