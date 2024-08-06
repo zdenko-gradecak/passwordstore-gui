@@ -29,9 +29,9 @@ const PasswordTree = ({ passwordStoreEntries, expandAllNodes }) => {
                   onClick={() => toggleNode(password.path)}
                   data-testid="password-list-item"
                 >
-      <span className="mr-2">
-        {isExpanded ? <FiChevronDown /> : <FiChevronRight />}
-      </span>
+                  <span className="mr-2">
+                    {isExpanded ? <FiChevronDown /> : <FiChevronRight />}
+                  </span>
                   <span>{password.name}</span>
                 </button>
               ) : (
