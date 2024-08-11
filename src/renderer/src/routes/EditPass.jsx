@@ -72,7 +72,7 @@ const EditPass = () => {
             className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50"
             type="button"
             onClick={() => {
-              navigate(-1);
+              navigate(`/pass/${encodeURIComponent(path)}`);
             }}
             data-testid="cancel-password-entry-button"
           >

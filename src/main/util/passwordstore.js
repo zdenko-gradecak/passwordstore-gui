@@ -77,6 +77,21 @@ const savePasswordStoreEntry = async (entryPath, content) => {
   });
 };
 
+const deletePasswordStoreEntry = async (entryPath) => {
+  const escapedPath = shellEscape([entryPath]);
+  const passCommand = `pass rm ${escapedPath}`;
+
+  return new Promise((resolve, reject) => {
+    exec(passCommand, (error, stdout, stderr) => {
+      if (error) {
+        console.log(stderr);
+        return reject(stderr);
+      }
+      resolve(stdout);
+    });
+  });
+};
+
 const readDirectoryStructure = (dirPath, excludePatterns = [], currentPath = '') => {
   const result = [];
 
@@ -121,4 +136,4 @@ const removeFileExtension = (fileName) => {
   return fileName.replace(/^(.*?)(\.[^.]*$|$)/, '$1');
 };
 
-export { getPasswordStoreEntries, getPasswordStoreEntry, savePasswordStoreEntry };
+export { getPasswordStoreEntries, getPasswordStoreEntry, savePasswordStoreEntry, deletePasswordStoreEntry };

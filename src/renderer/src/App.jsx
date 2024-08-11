@@ -5,9 +5,9 @@ import Index from './routes/Index';
 import NewPass, { action as newPassAction, loader as newPassLoader } from './routes/NewPass';
 import ViewPass, { loader as viewPassLoader } from './routes/ViewPass';
 import EditPass, { action as editPassAction, loader as editPassLoader } from './routes/EditPass';
-import * as React from 'react';
+import DeletePass, { action as deletePassAction, loader as deletePassLoader } from './routes/DeletePass';
 
-const App = ({ params }) => {
+const App = () => {
   const router = createHashRouter([
     {
       path: '/',
@@ -37,9 +37,10 @@ const App = ({ params }) => {
               action: editPassAction,
             },
             {
-              path: 'pass/:passName/destroy',
-              // action: destroyAction,
-              // errorElement: <div>Oops! There was an error.</div>,
+              path: 'pass/:passName/delete',
+              element: <DeletePass />,
+              loader: deletePassLoader,
+              action: deletePassAction,
             },
           ],
         },

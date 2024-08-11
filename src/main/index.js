@@ -2,7 +2,12 @@ import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
-import { getPasswordStoreEntries, getPasswordStoreEntry, savePasswordStoreEntry } from './util/passwordstore';
+import {
+  deletePasswordStoreEntry,
+  getPasswordStoreEntries,
+  getPasswordStoreEntry,
+  savePasswordStoreEntry
+} from './util/passwordstore';
 
 function createWindow() {
   // Create the browser window.
@@ -83,4 +88,8 @@ ipcMain.handle('get-password-store-entry', async (event, entryPath) => {
 
 ipcMain.handle('save-password-store-entry', async (event, entryPath, content) => {
   return await savePasswordStoreEntry(entryPath, content);
+});
+
+ipcMain.handle('delete-password-store-entry', async (event, entryPath, content) => {
+  return await deletePasswordStoreEntry(entryPath, content);
 });

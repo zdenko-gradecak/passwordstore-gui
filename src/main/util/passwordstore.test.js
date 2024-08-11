@@ -1,6 +1,7 @@
 const fs = require('fs');
 const { exec } = require('child_process');
 const { getPasswordStoreEntries, getPasswordStoreEntry, savePasswordStoreEntry } = require('../util/passwordstore.js');
+const { deletePasswordStoreEntry } = require('./passwordstore');
 
 jest.mock('fs');
 
@@ -316,6 +317,31 @@ Special chars:  '\\'' \" & | ; $ ( ) < > * ? [ ] { } ~ !
     /* eslint-enable */
 
     expect(exec).toHaveBeenCalledWith(expect.stringContaining(`echo ${escapedContent} | pass insert -m '${escapedPath}'`), expect.any(Function));
+    expect(result).toBe(mockStdout);
+  });
+});
+
+describe('deletePasswordStoreEntry', () => {
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  test('should execute pass command for deletion with escaped special chars and return stdout', async () => {
+    // Arrange
+    const mockStdout = 'mocked output';
+    exec.mockImplementation((command, callback) => {
+      callback(null, mockStdout, null);
+    });
+
+    const entryPath = 'Rocketbook(getrocketbook.co.uk)';
+
+    // Act
+    const result = await deletePasswordStoreEntry(entryPath);
+
+    // Assert
+    const escapedPath = 'Rocketbook(getrocketbook.co.uk)';
+
+    expect(exec).toHaveBeenCalledWith(expect.stringContaining(`pass rm '${escapedPath}'`), expect.any(Function));
     expect(result).toBe(mockStdout);
   });
 });

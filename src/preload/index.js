@@ -11,6 +11,9 @@ const api = {
   },
   savePasswordStoreEntry: async (entryPath, content) => {
     return await ipcRenderer.invoke('save-password-store-entry', entryPath, content);
+  },
+  deletePasswordStoreEntry: async (entryPath) => {
+    return await ipcRenderer.invoke('delete-password-store-entry', entryPath);
   }
 }
 
