@@ -1,3 +1,4 @@
+import { app } from 'electron';
 const fs = require('fs');
 const path = require('path');
 const { exec} = require('child_process');
@@ -137,7 +138,9 @@ const deletePasswordStoreEntry = async (entryPath) => {
 };
 
 const getSettingsFilePath = () => {
-  return path.join(__dirname, 'settings.json');
+  const userDataPath = app.getPath('userData');
+
+  return path.join(userDataPath, 'settings.json');
 };
 
 const getApplicationDataPath = async () => {
