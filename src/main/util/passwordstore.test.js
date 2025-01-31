@@ -1,36 +1,70 @@
-const fs = require('fs');
+const { vol } = require('memfs');
+import fs from 'fs';
 const { exec } = require('child_process');
-const { getPasswordStoreEntries, getPasswordStoreEntry, savePasswordStoreEntry } = require('../util/passwordstore.js');
-const { deletePasswordStoreEntry } = require('./passwordstore');
+const path = require('path');
+const { getSettingsData, saveSettingsData, getPasswordStoreEntries, getPasswordStoreEntry, savePasswordStoreEntry, deletePasswordStoreEntry } = require('../util/passwordstore.js');
 
-jest.mock('fs');
+jest.mock('fs', () => require('memfs').fs);
 
-describe('getPasswordStoreEntries', () => {
-  beforeEach(() => {
-    jest.resetAllMocks();
+const getMockSettingsFilePath = () => {
+  return path.join(__dirname, 'settings.json');
+};
+const getMockedSettingsFileContent = () => JSON.stringify({ path: '/home/fake-user/.password-store' });
+
+describe('getSettingsData', () => {
+  afterEach(() => {
+    vol.reset();
   });
 
-  test('correctly transfers directory hierarchy to JSON data structure (up to 4 levels of depth)', () => {
-    const mockStructure = {
-      '/home/disablable/.password-store': ['level1'],
-      '/home/disablable/.password-store/level1': ['level2'],
-      '/home/disablable/.password-store/level1/level2': ['level3'],
-      '/home/disablable/.password-store/level1/level2/level3': ['level4'],
-      '/home/disablable/.password-store/level1/level2/level3/level4': ['file1.gpg', 'file2.pgp', 'file3.asc'],
-    };
-
-    const mockStats = (isDirectory) => ({
-      isDirectory: () => isDirectory,
-      isFile: () => !isDirectory
+  test('returns the content of settings file as JSON', async () => {
+    vol.fromJSON({
+      [getMockSettingsFilePath()]: getMockedSettingsFileContent(),
     });
 
-    fs.readdirSync.mockImplementation((dirPath) => {
-      return mockStructure[dirPath] || [];
+    const result = await getSettingsData();
+
+    expect(result).toEqual(JSON.parse(getMockedSettingsFileContent()));
+  });
+});
+
+describe('saveSettingsData', () => {
+  beforeEach(() => {
+    vol.reset();
+  });
+
+  test('should save filtered settings data to a file', async () => {
+    // Arrange
+    vol.fromJSON({
+      [getMockSettingsFilePath()]: getMockedSettingsFileContent(),
     });
 
-    fs.statSync.mockImplementation((fullPath) => {
-      const isDirectory = fullPath in mockStructure;
-      return mockStats(isDirectory);
+    const mockData = { path: '/some/path', invalidKey: 'should be removed' };
+    const expectedData = JSON.stringify({ path: '/some/path' }, null, 2);
+
+    // Act
+    await saveSettingsData(mockData);
+
+    // Assert
+    const savedData = await fs.promises.readFile(getMockSettingsFilePath(), 'utf8');
+    expect(savedData).toBe(expectedData);
+  });
+
+  it('should throw an error for invalid input', async () => {
+    await expect(saveSettingsData(null)).rejects.toThrow('Invalid input: settingsDataToSave must be a valid JSON object');
+  });
+});
+
+describe('getPasswordStoreEntries', () => {
+  afterEach(() => {
+    vol.reset();
+  });
+
+  test('correctly transfers directory hierarchy to JSON data structure (up to 4 levels of depth)', async () => {
+    vol.fromJSON({
+      [getMockSettingsFilePath()]: getMockedSettingsFileContent(),
+      '/home/fake-user/.password-store/level1/level2/level3/level4/file1.gpg': '',
+      '/home/fake-user/.password-store/level1/level2/level3/level4/file2.pgp': '',
+      '/home/fake-user/.password-store/level1/level2/level3/level4/file3.asc': '',
     });
 
     const expectedResult = [
@@ -50,21 +84,9 @@ describe('getPasswordStoreEntries', () => {
                     name: 'level4',
                     path: 'level1/level2/level3/level4',
                     children: [
-                      {
-                        name: 'file1',
-                        path: 'level1/level2/level3/level4/file1',
-                        children: []
-                      },
-                      {
-                        name: 'file2',
-                        path: 'level1/level2/level3/level4/file2',
-                        children: []
-                      },
-                      {
-                        name: 'file3',
-                        path: 'level1/level2/level3/level4/file3',
-                        children: []
-                      },
+                      { name: 'file1', path: 'level1/level2/level3/level4/file1', children: [] },
+                      { name: 'file2', path: 'level1/level2/level3/level4/file2', children: [] },
+                      { name: 'file3', path: 'level1/level2/level3/level4/file3', children: [] },
                     ],
                   },
                 ],
@@ -75,30 +97,17 @@ describe('getPasswordStoreEntries', () => {
       },
     ];
 
-    const result = getPasswordStoreEntries();
+    const result = await getPasswordStoreEntries();
     expect(result).toEqual(expectedResult);
   });
 
-  test('excludes patterns correctly', () => {
-    const mockStructure = {
-      '/home/disablable/.password-store': ['folder1', 'folder2', 'folder3'],
-      '/home/disablable/.password-store/folder1': ['file1.gpg'],
-      '/home/disablable/.password-store/folder2': ['file2.pgp'],
-      '/home/disablable/.password-store/folder3': ['file3.asc', 'file4.txt'],
-    };
-
-    const mockStats = (isDirectory) => ({
-      isDirectory: () => isDirectory,
-      isFile: () => !isDirectory
-    });
-
-    fs.readdirSync.mockImplementation((dirPath) => {
-      return mockStructure[dirPath] || [];
-    });
-
-    fs.statSync.mockImplementation((fullPath) => {
-      const isDirectory = fullPath in mockStructure;
-      return mockStats(isDirectory);
+  test('excludes patterns correctly', async () => {
+    vol.fromJSON({
+      [getMockSettingsFilePath()]: getMockedSettingsFileContent(),
+      '/home/fake-user/.password-store/folder1/file1.gpg': '',
+      '/home/fake-user/.password-store/folder2/file2.pgp': '',
+      '/home/fake-user/.password-store/folder3/file3.asc': '',
+      '/home/fake-user/.password-store/folder3/file4.txt': '',
     });
 
     const expectedResult = [
@@ -109,7 +118,7 @@ describe('getPasswordStoreEntries', () => {
           {
             name: 'file1',
             path: 'folder1/file1',
-            children: []
+            children: [],
           },
         ],
       },
@@ -120,7 +129,7 @@ describe('getPasswordStoreEntries', () => {
           {
             name: 'file2',
             path: 'folder2/file2',
-            children: []
+            children: [],
           },
         ],
       },
@@ -131,74 +140,46 @@ describe('getPasswordStoreEntries', () => {
           {
             name: 'file3',
             path: 'folder3/file3',
-            children: []
+            children: [],
           },
         ],
       },
     ];
 
-    const result = getPasswordStoreEntries();
+    const result = await getPasswordStoreEntries(); // Ensure this is awaited since the implementation is async
     expect(result).toEqual(expectedResult);
   });
 
-  test('returns an empty array for an empty directory', () => {
-    fs.readdirSync.mockImplementation(() => []);
+  test('returns an empty array for an empty directory', async () => {
+    vol.fromJSON({
+      [getMockSettingsFilePath()]: getMockedSettingsFileContent(),
+      '/home/fake-user/.password-store/empty': {},
+    });
 
-    const result = getPasswordStoreEntries('/empty');
+    const result = await getPasswordStoreEntries('/empty');
     expect(result).toEqual([]);
   });
 
-  test('handles folder not found (incorrect path) case', () => {
-    fs.readdirSync.mockImplementation(() => {
-      throw new Error('Folder not found');
+  test('handles folder not found (incorrect path) case', async () => {
+    vol.fromJSON({
+      [getMockSettingsFilePath()]: getMockedSettingsFileContent(),
     });
 
-    expect(() => getPasswordStoreEntries('/invalid/path')).toThrow('Folder not found');
+    await expect(getPasswordStoreEntries('/invalid/path')).rejects.toThrow(
+      'ENOENT: no such file or directory, scandir \'/home/fake-user/.password-store\''
+    );
   });
 
-  test('filters folders and files by given search term', () => {
-    const mockStructure = {
-      '/home/disablable/.password-store': ['Ron', 'Bob'],
-      '/home/disablable/.password-store/Ron': ['Amazon', 'Google'],
-      '/home/disablable/.password-store/Ron/Amazon': ['aws.gpg'],
-      '/home/disablable/.password-store/Ron/Google': ['rons_gmail.gpg'],
-      '/home/disablable/.password-store/Bob': ['Google'],
-      '/home/disablable/.password-store/Bob/Google': ['bobs_gmail.gpg'],
-    };
-
-    const mockStats = (isDirectory) => ({
-      isDirectory: () => isDirectory,
-      isFile: () => !isDirectory
-    });
-
-    fs.readdirSync.mockImplementation((dirPath) => {
-      return mockStructure[dirPath] || [];
-    });
-
-    fs.statSync.mockImplementation((fullPath) => {
-      const isDirectory = fullPath in mockStructure;
-      return mockStats(isDirectory);
+  test('filters folders and files by given search term', async () => {
+    vol.fromJSON({
+      [getMockSettingsFilePath()]: getMockedSettingsFileContent(),
+      '/home/fake-user/.password-store/Ron/Amazon/aws.gpg': '',
+      '/home/fake-user/.password-store/Ron/Google/rons_gmail.gpg': '',
+      '/home/fake-user/.password-store/Bob/Google/bobs_gmail.gpg': '',
     });
 
     // Test filter by folder name
     const expectedResultByFolderName = [
-      {
-        name: 'Ron',
-        path: 'Ron',
-        children: [
-          {
-            name: 'Google',
-            path: 'Ron/Google',
-            children: [
-              {
-                name: 'rons_gmail',
-                path: 'Ron/Google/rons_gmail',
-                children: []
-              }
-            ]
-          }
-        ]
-      },
       {
         name: 'Bob',
         path: 'Bob',
@@ -210,16 +191,33 @@ describe('getPasswordStoreEntries', () => {
               {
                 name: 'bobs_gmail',
                 path: 'Bob/Google/bobs_gmail',
-                children: []
-              }
-            ]
-          }
-        ]
-      }
+                children: [],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        name: 'Ron',
+        path: 'Ron',
+        children: [
+          {
+            name: 'Google',
+            path: 'Ron/Google',
+            children: [
+              {
+                name: 'rons_gmail',
+                path: 'Ron/Google/rons_gmail',
+                children: [],
+              },
+            ],
+          },
+        ],
+      },
     ];
 
-    const resultForSearchByFolderName = getPasswordStoreEntries('Google');
-    expect(expectedResultByFolderName).toEqual(resultForSearchByFolderName);
+    const resultForSearchByFolderName = await getPasswordStoreEntries('Google');
+    expect(resultForSearchByFolderName).toEqual(expectedResultByFolderName);
 
     // Test filter by file name
     const expectedResultByFileName = [
@@ -234,16 +232,16 @@ describe('getPasswordStoreEntries', () => {
               {
                 name: 'aws',
                 path: 'Ron/Amazon/aws',
-                children: []
-              }
-            ]
-          }
-        ]
-      }
+                children: [],
+              },
+            ],
+          },
+        ],
+      },
     ];
 
-    const resultForSearchByFileName = getPasswordStoreEntries('aws');
-    expect(expectedResultByFileName).toEqual(resultForSearchByFileName);
+    const resultForSearchByFileName = await getPasswordStoreEntries('aws');
+    expect(resultForSearchByFileName).toEqual(expectedResultByFileName);
   });
 });
 
@@ -345,3 +343,5 @@ describe('deletePasswordStoreEntry', () => {
     expect(result).toBe(mockStdout);
   });
 });
+
+

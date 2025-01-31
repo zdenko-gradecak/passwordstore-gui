@@ -3,6 +3,50 @@ const path = require('path');
 const { exec} = require('child_process');
 const shellEscape = require('shell-escape');
 
+const getSettingsData = async () => {
+  const settingsFilePath = getSettingsFilePath();
+
+  try {
+    await fs.promises.access(settingsFilePath);
+    const fileContents = await fs.promises.readFile(settingsFilePath, 'utf8');
+
+    return JSON.parse(fileContents);
+  } catch (error) {
+    console.error('Error in getSettingsData:', error);
+    if (error.code === 'ENOENT') {
+      return { path: '' };
+    }
+    throw error;
+  }
+};
+
+const saveSettingsData = async (settingsDataToSave) => {
+  const allowedKeys = ['path'];
+  const settingsFilePath = getSettingsFilePath();
+
+  try {
+    // Validate that the input is a valid JSON object
+    if (typeof settingsDataToSave !== 'object' || settingsDataToSave === null) {
+      throw new Error('Invalid input: settingsDataToSave must be a valid JSON object');
+    }
+
+    // Filter the input to only include allowed keys
+    const filteredSettingsData = Object.keys(settingsDataToSave)
+      .filter(key => allowedKeys.includes(key))
+      .reduce((obj, key) => {
+        obj[key] = settingsDataToSave[key];
+        return obj;
+      }, {});
+
+    const jsonData = JSON.stringify(filteredSettingsData, null, 2);
+
+    await fs.promises.writeFile(settingsFilePath, jsonData, 'utf8');
+  } catch (error) {
+    console.error('Error saving settings data:', error);
+    throw error;
+  }
+};
+
 const filterDirectoryStructure = (structure, query) => {
   const lowerCaseQuery = query.toLowerCase();
 
@@ -34,8 +78,8 @@ const filterDirectoryStructure = (structure, query) => {
     .filter(item => item !== null); // Filter out null items and cast to DirectoryStructure
 };
 
-const getPasswordStoreEntries = (query) => {
-  const dirPath = '/home/disablable/.password-store'; // Update this to the correct path
+const getPasswordStoreEntries = async (query) => {
+  const dirPath = await getApplicationDataPath();
   const excludePatterns = [/^\./];
 
   const directoryStructure = readDirectoryStructure(dirPath, excludePatterns);
@@ -92,6 +136,22 @@ const deletePasswordStoreEntry = async (entryPath) => {
   });
 };
 
+const getSettingsFilePath = () => {
+  return path.join(__dirname, 'settings.json');
+};
+
+const getApplicationDataPath = async () => {
+  const settingsData = await getSettingsData();
+
+  //throw error here (we don't want the save method to save on empty path
+
+  if (settingsData.hasOwnProperty('path')) {
+    return settingsData.path;
+  }
+
+  return '';
+};
+
 const readDirectoryStructure = (dirPath, excludePatterns = [], currentPath = '') => {
   const result = [];
 
@@ -136,4 +196,4 @@ const removeFileExtension = (fileName) => {
   return fileName.replace(/^(.*?)(\.[^.]*$|$)/, '$1');
 };
 
-export { getPasswordStoreEntries, getPasswordStoreEntry, savePasswordStoreEntry, deletePasswordStoreEntry };
+export { getSettingsData, saveSettingsData, getPasswordStoreEntries, getPasswordStoreEntry, savePasswordStoreEntry, deletePasswordStoreEntry };
