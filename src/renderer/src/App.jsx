@@ -6,6 +6,7 @@ import NewPass, { action as newPassAction, loader as newPassLoader } from './rou
 import ViewPass, { loader as viewPassLoader } from './routes/ViewPass';
 import EditPass, { action as editPassAction, loader as editPassLoader } from './routes/EditPass';
 import DeletePass, { action as deletePassAction, loader as deletePassLoader } from './routes/DeletePass';
+import Settings, { action as settingsAction, loader as settingsLoader } from './routes/Settings';
 
 const App = () => {
   const router = createHashRouter([
@@ -46,6 +47,13 @@ const App = () => {
         },
       ],
     },
+    {
+      path: '/settings',
+      element: <Settings />,
+      errorElement: <ErrorPage />,
+      loader: settingsLoader,
+      action: settingsAction,
+    }
   ]);
 
   return (
