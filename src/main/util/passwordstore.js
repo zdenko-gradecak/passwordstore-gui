@@ -4,6 +4,11 @@ const path = require('path');
 const { exec} = require('child_process');
 const shellEscape = require('shell-escape');
 
+(async () => {
+  const fixPath = (await import('fix-path')).default;
+  fixPath();
+})();
+
 const getSettingsData = async () => {
   const settingsFilePath = getSettingsFilePath();
 

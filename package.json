@@ -21,6 +21,7 @@
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.1",
     "@electron-toolkit/utils": "^3.0.0",
+    "fix-path": "^4.0.0",
     "react-icons": "^5.2.1",
     "react-router-dom": "^6.25.1",
     "shell-escape": "^0.2.0"
