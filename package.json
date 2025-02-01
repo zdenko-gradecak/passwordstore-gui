@@ -1,9 +1,9 @@
 {
   "name": "passwordstore-gui",
   "version": "1.0.0",
-  "description": "An Electron application with React",
+  "description": "GUI for passwordstore.org built with React and Electron",
   "main": "./out/main/index.js",
-  "author": "example.com",
+  "author": "https://github.com/zdenko-gradecak",
   "homepage": "https://electron-vite.org",
   "scripts": {
     "format": "prettier --write .",

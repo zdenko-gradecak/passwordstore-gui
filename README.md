@@ -20,15 +20,30 @@ $ npm install
 $ npm run dev
 ```
 
-### Build
+### Tests
 
 ```bash
-# For windows
-$ npm run build:win
+$ npm run test
+```
 
-# For macOS
-$ npm run build:mac
+### Build
 
-# For Linux
+#### Linux
+```bash
 $ npm run build:linux
+```
+The built file will be saved in `dist` folder
+
+
+#### macOS
+If building on mac OS, the command is:
+```bash
+$ npm run build:msc
+```
+However, if you're working on Linux machine, push the commit to the repo where pipeline will build the app and save it
+to artifacts from where it can be downloaded.
+
+#### Windows
+```bash
+$ npm run build:win
 ```
