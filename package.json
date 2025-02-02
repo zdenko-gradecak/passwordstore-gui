@@ -1,6 +1,6 @@
 {
   "name": "passwordstore-gui",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "GUI for passwordstore.org built with React and Electron",
   "main": "./out/main/index.js",
   "author": "https://github.com/zdenko-gradecak",
