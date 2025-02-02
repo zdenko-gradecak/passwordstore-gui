@@ -2,12 +2,19 @@ const { vol } = require('memfs');
 import fs from 'fs';
 const { exec } = require('child_process');
 const path = require('path');
+
+const mockedSettingsFileFolder = '/mocked/userData/path';
+
+jest.mock('../util/electronApp.js', () => ({
+  getPath: jest.fn().mockReturnValue(mockedSettingsFileFolder)
+}));
+
 const { getSettingsData, saveSettingsData, getPasswordStoreEntries, getPasswordStoreEntry, savePasswordStoreEntry, deletePasswordStoreEntry } = require('../util/passwordstore.js');
 
 jest.mock('fs', () => require('memfs').fs);
 
 const getMockSettingsFilePath = () => {
-  return path.join(__dirname, 'settings.json');
+  return path.join(mockedSettingsFileFolder, 'settings.json');
 };
 const getMockedSettingsFileContent = () => JSON.stringify({ path: '/home/fake-user/.password-store' });
 
@@ -49,7 +56,7 @@ describe('saveSettingsData', () => {
     expect(savedData).toBe(expectedData);
   });
 
-  it('should throw an error for invalid input', async () => {
+  test('should throw an error for invalid input', async () => {
     await expect(saveSettingsData(null)).rejects.toThrow('Invalid input: settingsDataToSave must be a valid JSON object');
   });
 });

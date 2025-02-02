@@ -1,12 +1,15 @@
-import { app } from 'electron';
+import { getPath } from './electronApp';
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 const { exec} = require('child_process');
 const shellEscape = require('shell-escape');
 
 (async () => {
-  const fixPath = (await import('fix-path')).default;
-  fixPath();
+  if (os.platform() === 'darwin') {
+    const fixPath = (await import('fix-path')).default;
+    fixPath();
+  }
 })();
 
 const getSettingsData = async () => {
@@ -143,7 +146,7 @@ const deletePasswordStoreEntry = async (entryPath) => {
 };
 
 const getSettingsFilePath = () => {
-  const userDataPath = app.getPath('userData');
+  const userDataPath = getPath('userData');
 
   return path.join(userDataPath, 'settings.json');
 };
