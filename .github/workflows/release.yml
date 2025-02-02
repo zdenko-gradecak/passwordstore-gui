@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - v*.*.*
+  workflow_dispatch:
 
 jobs:
   release:
@@ -12,7 +13,6 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
-#        os: [ubuntu-latest, macos-latest, windows-latest]
 
     steps:
       - name: Check out Git repository
@@ -26,39 +26,37 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
-      #      - name: build-linux
-      #        if: matrix.os == 'ubuntu-latest'
-      #        run: npm run build:linux
+      - name: Build for Linux
+        if: matrix.os == 'ubuntu-latest'
+        run: npm run build:linux -- --publish=never
 
-      - name: build-mac
+      - name: Build for Mac
         if: matrix.os == 'macos-latest'
         run: npm run build:mac -- --publish=never
 
-      #      - name: build-win
-      #        if: matrix.os == 'windows-latest'
-      #        run: npm run build:win
+#      - name: Build for Windows
+#        if: matrix.os == 'windows-latest'
+#        run: npm run build:win -- --publish=never
 
-      - name: release
+      - name: Debug - List Output Files
+        run: ls -alR dist/
+
+      - name: Release
         uses: softprops/action-gh-release@v1
         with:
-          draft: true
+          draft: false
+          tag_name: ${{ github.ref_name }}
+          name: "Release ${{ github.ref_name }}"
           files: |
-            dist/*.exe
-            dist/*.zip
-            dist/*.dmg
-            dist/*.AppImage
-            dist/*.snap
-            dist/*.deb
-            dist/*.rpm
-            dist/*.tar.gz
-            dist/*.yml
-            dist/*.blockmap
+            dist/**/*.exe
+            dist/**/*.zip
+            dist/**/*.dmg
+            dist/**/*.AppImage
+            dist/**/*.snap
+            dist/**/*.deb
+            dist/**/*.rpm
+            dist/**/*.tar.gz
+            dist/**/*.yml
+            dist/**/*.blockmap
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-
-#      - name: Upload macOS Build Artifacts
-#        if: matrix.os == 'macos-latest'
-#        uses: actions/upload-artifact@v4
-#        with:
-#          name: mac-build
-#          path: dist/
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
